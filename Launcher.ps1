@@ -1,4 +1,4 @@
-param( [String]$SerialNumber, [String] $NameProject)
+﻿param( [String]$SerialNumber, [String] $NameProject)
 
 . .\Helper.ps1
 
@@ -10,6 +10,6 @@ $TimeMTP = [Diagnostics.Stopwatch]::StartNew()
 
 & .\$NameProject\Master.ps1
 
-pause
 
 Stop-Transcript
+pause

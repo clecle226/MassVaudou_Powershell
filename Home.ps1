@@ -61,10 +61,10 @@ function ListDeviceWaitUnauthorized{
         Read-Host "Valider toutes les autorisations ADB avant de conitnuer"
         $ListDeviceToEnroll = ListDeviceWaitUnauthorized 
     }
-    return $ListDeviceToEnroll 
+    return $ListDeviceToEnroll
 }
 $ListTerminaux = ListDeviceWaitUnauthorized
-
+$ListTerminaux =$ListTerminaux.where({ -not [string]::IsNullOrWhitespace($_) })
 Write-Host "Voici la liste des terminaux detecté" -ForegroundColor Green
 $ListTerminaux
 Write-Host "Lancement du Script $Project" -ForegroundColor Green
