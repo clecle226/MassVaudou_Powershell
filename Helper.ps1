@@ -13,17 +13,39 @@ function GetIMEI{param( [String]$SerialNumber)
     $tradParcell = $tradParcell.Replace("'","")
     return $tradParcell
 }
+function GetScreen{param( [String]$SerialNumber)
+    do{
+        [System.Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+        $resultScreen = .\platform-tools\adb.exe -s $SerialNumber exec-out uiautomator dump /dev/tty
+    
+        $resultScreen -match '<.*>' | Out-Null
+    }while ($matches.Length -eq 0)
+    [xml]$result = $matches[0]
+    return $result
+}
 function FoundCoordByXPath{param( [String]$SerialNumber, $XPath, [xml]$ScreenBack = "")
+    $ListNode = FoundNodeByXPath -SerialNumber $SerialNumber -XPath $XPath -ScreenBack $ScreenBack
+    if ($ListNode.Length -gt 0)
+    {
+        $ResultClick = $ListNode[0].Node.OuterXml
+        $Valid = $ResultClick -match "\[(?<Left>\d*),(?<Up>\d*)\]\[(?<Right>\d*),(?<Down>\d*)\]"
+        If ($Valid)
+        {
+            return $matches
+        }
+        else {
+            return $false
+        }
+    }
+}
+function FoundNodeByXPath{param( [String]$SerialNumber, $XPath, [xml]$ScreenBack = "")   
     if ($XPath.GetType().Name -eq "String")
     {
         $XPath = @($XPath)
     }
     if([string]::IsNullOrWhiteSpace($ScreenBack.Value))
     {
-        do{
-            (.\platform-tools\adb.exe -s $SerialNumber exec-out uiautomator dump /dev/tty) -match '<.*>' | Out-Null
-        }while ($matches.Length -eq 0)
-        [xml]$ScreenBack = $matches[0]
+        $ScreenBack = GetScreen -SerialNumber $SerialNumber
     }
 
     $i = 0
@@ -32,18 +54,8 @@ function FoundCoordByXPath{param( [String]$SerialNumber, $XPath, [xml]$ScreenBac
         $i = $i+1
     }
     while(($ListNode.Length -eq 0) -and ($i -lt $XPath.Length ))
+    return $ListNode
 
-    if ($ListNode.Length -eq 0)
-    {
-        return $False
-    }
-    $ResultClick = $ListNode[0].Node.OuterXml
-    $Valid = $ResultClick -match "\[(?<Left>\d*),(?<Up>\d*)\]\[(?<Right>\d*),(?<Down>\d*)\]"
-
-    If ($Valid)
-    {
-        return $matches
-    }
 }
 
 function SlideByXPath{param( [String]$SerialNumber, $XPath, [xml]$ScreenBack = "", [String]$Orientation, [float]$Ratio=1)#Orientation = Up,Down,Left,Right
@@ -52,7 +64,7 @@ function SlideByXPath{param( [String]$SerialNumber, $XPath, [xml]$ScreenBack = "
     {
         [int]$MidX = ([int]$result["Left"]+[int]$result["Right"])/2
         [int]$MidY = ([int]$result["Up"]+[int]$result["Down"])/2
-        #Correction varraible en enlevant 5% du chiffre
+        #Correction variable en enlevant 5% du chiffre
         [int]$Up = ([int]$result["Up"])*0.95*$Ratio
         [int]$Down = ([int]$result["Down"])*0.95*$Ratio
         [int]$Left = ([int]$result["Left"])*0.95*$Ratio
@@ -86,14 +98,7 @@ if ($XPath.GetType().Name -eq "String")
 {
     $XPath = @($XPath)
 }
-
-do{
-
-    $resultScreen =  .\platform-tools\adb.exe -s $SerialNumber exec-out uiautomator dump /dev/tty
-
-    $resultScreen -match '<.*>' | Out-Null
-}while ($matches.Length -eq 0)
-[xml]$result = $matches[0]
+$result = GetScreen -SerialNumber $SerialNumber
 
 $ResultClick = ""
 $AntiBug = Select-Xml -Xml $result -XPath ".//*[@package='com.samsung.android.MtpApplication']/node[@resource-id='android:id/button1']" #Filtre Anti-bug Message MTP
@@ -145,8 +150,25 @@ else {
 }
 function SendCommandShell{
     param( [String]$SerialNumber, [String]$Command)
-    $retour = .\platform-tools\adb.exe -s $SerialNumber shell $Command
-    return $retour
+
+    $p = New-Object System.Diagnostics.Process
+    $p.StartInfo.FileName = (Convert-Path -Path ".")+"\platform-tools\adb.exe"
+    #$p.StartInfo.WorkingDirectory = Convert-Path -Path "."
+    $p.StartInfo.RedirectStandardOutput = $true
+    $p.StartInfo.RedirectStandardError = $true
+    $p.StartInfo.UseShellExecute = $false
+    $p.StartInfo.Arguments = "-s $SerialNumber shell $Command"
+
+    $p.Start() | Out-Null
+
+    $stdout = $p.StandardOutput.ReadToEnd()
+    $stderr = $p.StandardError.ReadToEnd()
+    If(-not ([string]::IsNullOrWhiteSpace($stderr)))
+    {
+        Write-Host "Erreur du logiciel ADB: $stderr" -ForegroundColor DarkGray
+        return "Error: $stderr `r`nSTDOUT: $stdout"
+    }
+    return $stdout
 }
 
 
@@ -176,34 +198,12 @@ function PushFile{ param( [String]$SerialNumber, [String]$PathSource,  [String]$
         .\platform-tools\adb.exe -s $SerialNumber push $PathSource $PathDestination
     }
 }
-function ChangeWallpaper{ param( [String]$SerialNumber, [String] $Path ,[bool]$EcranAccueil = $True, [bool]$EcranVerrouillage = $True)
-    Write-Host  "Change wallpaper"
-    $NamePictures = ($Path.split("\"))[-1]
-    PushFile -SerialNumber $SerialNumber -PathSource $Path -PathDestination '/sdcard/Pictures' -Sync $false | Out-Null
-    if($EcranAccueil -and $EcranVerrouillage){
-        SendCommandShell -SerialNumber $SerialNumber -Command "am start --user 0 -n com.sec.android.wallpapercropper2/com.sec.android.wallpapercropper2.BothCropActivity -d file:///sdcard/Pictures/$NamePictures" | Out-Null
-    }
-    elseif ($EcranAccueil){
-        SendCommandShell -SerialNumber $SerialNumber -Command "am start --user 0 -n com.sec.android.wallpapercropper2/.HomeCropActivity -d file:///sdcard/Pictures/$NamePictures" | Out-Null
-    }
-    elseif ($EcranVerrouillage){
-        SendCommandShell -SerialNumber $SerialNumber -Command "am start --user 0 -n  com.sec.android.wallpapercropper2/.KeyguardCropActivity -d file:///sdcard/Pictures/$NamePictures" | Out-Null
-    }
-	
-    Start-Sleep -Seconds 1
-    if(ClickOnNodeByXPath -SerialNumber $SerialNumber -XPath @(".//*[@resource-id='com.sec.android.wallpapercropper2:id/save']",".//*[@resource-id='com.sec.android.wallpapercropper2:id/confirm_button']"))
-    {
-        Write-Host "Change Wallpaper success" -ForegroundColor Green 
-    }
-    else
-    {
-        Write-Host "Change Wallpaper failed" -ForegroundColor Red
-    }
-}
+
 
 
 . .\Addon_OptionBuiltin.ps1
 . .\Addon_OptionNotBuiltin.ps1
 . .\Addon_Package.ps1
 . .\Addon_WebBrowser.ps1
+. .\Addon_SamsungExperience.ps1
 

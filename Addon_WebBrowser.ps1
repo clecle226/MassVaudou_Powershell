@@ -5,7 +5,7 @@
     ClickOnNodeByXPath -SerialNumber $SerialNumber -XPath @(".//*[@text='Applications par défaut']/../..",".//*[@class='android.widget.ListView']//*[index='1']") | Out-Null
     ClickOnNodeByXPath -SerialNumber $SerialNumber -XPath @(".//*[@text='Application de navigation']/../..",".//*[@class='android:id/list']//*[index='0']") | Out-Null
     ClickOnNodeByXPath -SerialNumber $SerialNumber -XPath @(".//*[@text='$Name']/../..") | Out-Null
-    ClickOnNodeByXPath -SerialNumber $SerialNumber -XPath @(".//*[@class='android.widget.ImageButton']",".//*[@content-desc='Remonter d\'un niveau']") | Out-Null
+    ClickOnNodeByXPath -SerialNumber $SerialNumber -XPath @(".//*[@class='android.widget.ImageButton']",".//*[@content-desc=`"Remonter d'un niveau`"]") | Out-Null
     SendCommandShell -SerialNumber $SerialNumber -Command "am force-stop com.android.settings"
 }
 
@@ -36,7 +36,7 @@ function CreateWebsiteShortcutChrome {
 
     SendCommandShell -SerialNumber $SerialNumber -Command "am start -n com.android.chrome/com.google.android.apps.chrome.Main -d $Adresse" | Out-Null
     ClickOnNodeByXPath -SerialNumber $SerialNumber -XPath ".//*[@resource-id='com.android.chrome:id/menu_button']" | Out-Null
-    ClickOnNodeByXPath -SerialNumber $SerialNumber -XPath @(".//*[@resource-id='com.android.chrome:id/app_menu_list']//*[@text='Ajouter à l'écran d'accueil']",".//*[@resource-id='com.android.chrome:id/app_menu_list']/*[@index='9']") | Out-Null
+    ClickOnNodeByXPath -SerialNumber $SerialNumber -XPath @(".//*[@resource-id='com.android.chrome:id/app_menu_list']//*[@text=`"Ajouter à l'écran d'accueil`"]",".//*[@resource-id='com.android.chrome:id/app_menu_list']/*[@index='9']") | Out-Null
     
     ClearTextEdit -SerialNumber $SerialNumber -IdTextEdit "com.android.chrome:id/text" | Out-Null
     $NameParsed = ($Name).replace(" ", "%s")
@@ -64,7 +64,7 @@ function DefinirHomepageChrome{param( [String]$SerialNumber, [String]$Adresse = 
     ##Entrer dans parametres
     ClickOnNodeByXPath -SerialNumber $SerialNumber -XPath @(".//*[@resource-id='com.android.chrome:id/app_menu_list']//*[@text='Paramètres']/..",".//*[@resource-id='com.android.chrome:id/app_menu_list']/*[@index='10']")
     ##Page D'accueil
-    ClickOnNodeByXPath -SerialNumber $SerialNumber -XPath @(".//*[@resource-id='android:id/list']//*[@text='Page d&apos;accueil']",".//*[@resource-id='android:id/list']/*[@index='6']")
+    ClickOnNodeByXPath -SerialNumber $SerialNumber -XPath @(".//*[@resource-id='android:id/list']//*[@text=`"Page d'accueil`"]",".//*[@resource-id='android:id/list']/*[@index='6']")
     ClickOnNodeByXPath -SerialNumber $SerialNumber -XPath @(".//*[@resource-id='android:id/list']//*[@text='Ouvrir cette page']",".//*[@resource-id='android:id/list']/*[@index='1']")
 
     ClearTextEdit -SerialNumber $SerialNumber -IdTextEdit "com.android.chrome:id/homepage_url_edit"
@@ -79,11 +79,13 @@ function DefinirHomepageChrome{param( [String]$SerialNumber, [String]$Adresse = 
 function DefinirHomepageFirefox{
     param( [String]$SerialNumber, [String]$Adresse = "google.com")
     SendCommandShell -SerialNumber $SerialNumber -Command "am start -n org.mozilla.firefox/org.mozilla.gecko.BrowserApp -d $Adresse" | Out-Null
+    Start-Sleep -Seconds 2 #Error on loading page 
+    #TODO: Search secure test
     ClickOnNodeByXPath -SerialNumber $SerialNumber -XPath ".//*[@resource-id='org.mozilla.firefox:id/menu']" | Out-Null
     ClickOnNodeByXPath -SerialNumber $SerialNumber -XPath @(".//*[@text='Paramètres']",".//*[@class='android.widget.ListView']//*[index='11']") | Out-Null
     ClickOnNodeByXPath -SerialNumber $SerialNumber -XPath @(".//*[@text='Général']/../..",".//*[@resource-id='android:id/list']/*[index='1']") | Out-Null
-    ClickOnNodeByXPath -SerialNumber $SerialNumber -XPath @(".//*[@text='Écran d’accueil']/../..",".//*[@resource-id='android:id/list']/*[index='0']") | Out-Null
-    ClickOnNodeByXPath -SerialNumber $SerialNumber -XPath @(".//*[@text='Définir une page d’accueil']/../..",".//*[@resource-id='android:id/list']/*[index='0']") | Out-Null
+    ClickOnNodeByXPath -SerialNumber $SerialNumber -XPath @(".//*[@text=`"Écran d’accueil`"]/../..",".//*[@resource-id='android:id/list']/*[index='0']") | Out-Null
+    ClickOnNodeByXPath -SerialNumber $SerialNumber -XPath @(".//*[@text=`"Définir une page d’accueil`"]/../..",".//*[@resource-id='android:id/list']/*[index='0']") | Out-Null
     ClickOnNodeByXPath -SerialNumber $SerialNumber -XPath ".//*[@resource-id='org.mozilla.firefox:id/radio_user_address']" | Out-Null
     ClearTextEdit -SerialNumber $SerialNumber -IdTextEdit "org.mozilla.firefox:id/edittext_user_address" | Out-Null
 
@@ -122,20 +124,26 @@ function AddFavoriFirefox{
     param( [String]$SerialNumber, [String]$Adresse = "google.com", [String]$Name = "Test%sWhitespace")
 
     SendCommandShell -SerialNumber $SerialNumber -Command "am start -n org.mozilla.firefox/org.mozilla.gecko.BrowserApp -d $Adresse" | Out-Null
-    Start-Sleep -Seconds 2
+    Start-Sleep -Seconds 2 #Error on loading page 
+    #TODO: Search secure test
     ClickOnNodeByXPath -SerialNumber $SerialNumber -XPath ".//*[@resource-id='org.mozilla.firefox:id/menu']" | Out-Null
+    #TODO: Sortir de la function si le marque-pages est déjà coché
     ClickOnNodeByXPath -SerialNumber $SerialNumber -XPath ".//*[@resource-id='org.mozilla.firefox:id/bookmark']" | Out-Null
-    if(-not (ClickOnNodeByXPath -SerialNumber $SerialNumber -XPath ".//*[@resource-id='org.mozilla.firefox:id/snackbar_action']"))
-    {
+
+    #TODO: Found solution to click more speedly on OPTIONS button and accelerate function
+    #if(-not (ClickOnNodeByXPath -SerialNumber $SerialNumber -XPath ".//*[@resource-id='org.mozilla.firefox:id/snackbar_action']"))
+    #{
+        #Start-Sleep -Seconds 2 #Error on loading page 
+        #TODO: Search secure test
         #Si il as pas réussi à cliquer sur le bouton option alors chemin long
         ClickOnNodeByXPath -SerialNumber $SerialNumber -XPath ".//*[@resource-id='org.mozilla.firefox:id/menu']" | Out-Null
         ClickOnNodeByXPath -SerialNumber $SerialNumber -XPath @(".//*[@text='Marque-pages']",".//*[@class='android.widget.ListView']//*[index='4']") | Out-Null
-        ClickOnNodeByXPath -SerialNumber $SerialNumber -XPath ".//*[@text='$Adresse']/../.." -LongClick $true | Out-Null
+        ClickOnNodeByXPath -SerialNumber $SerialNumber -XPath @(".//*[@text='$Adresse']/../..",".//*[contains(@text,'$Name')]/../..",".//*[@text='Aller à l’onglet']/../..") -LongClick $true | Out-Null
         ClickOnNodeByXPath -SerialNumber $SerialNumber -XPath @(".//*[@text='Modifier']/../..",".//*[@class='android.widget.ListView']/*[index='5']") | Out-Null
-    }
-    else {
-    ClickOnNodeByXPath -SerialNumber $SerialNumber -XPath @(".//*[@resource-id='android:id/text1']",".//*[@text='Modifier']") | Out-Null
-    }
+    #}
+    #else {
+   #ClickOnNodeByXPath -SerialNumber $SerialNumber -XPath @(".//*[@resource-id='android:id/text1']",".//*[@text='Modifier']") | Out-Null
+    #}
     ClearTextEdit -SerialNumber $SerialNumber -IdTextEdit "org.mozilla.firefox:id/edit_bookmark_name"
     $NameParsed = ($Name).replace(" ", "%s")
     SendCommandShell -SerialNumber $SerialNumber -Command "input text $NameParsed" 
