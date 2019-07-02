@@ -5,10 +5,7 @@
     [String]$TmpScreen = ""
     do{
         [bool]$OutWhile = $false
-        do{
-            (.\platform-tools\adb.exe -s $SerialNumber exec-out uiautomator dump /dev/tty) -match '<.*>' | Out-Null
-        }while ($matches.Length -eq 0)
-        [xml]$ScreenBack = $matches[0]
+        $ScreenBack = GetScreen -SerialNumber $SerialNumber
          
         if($TmpScreen -eq $ScreenBack.InnerXML)
         {
@@ -19,6 +16,7 @@
         }
         $resultSoundKeyboard = FoundCoordByXPath -SerialNumber $SerialNumber -ScreenBack $ScreenBack -XPath ".//*[@text='Son du clavier']/../..//*[@resource-id='android:id/switch_widget']"
         $resultSoundNumboard = FoundCoordByXPath -SerialNumber $SerialNumber -ScreenBack $ScreenBack -XPath ".//*[@text='Sons pavé de numérotation']/../..//*[@resource-id='android:id/switch_widget']"
+        Write-Host $resultSoundNumboard
         if($resultSoundKeyboard -eq $false -and $resultSoundNumboard -eq $false)
         {
             SlideByXPath -SerialNumber $SerialNumber -XPath ".//*[@resource-id='android:id/content']" -Orientation "Up"  -ScreenBack $ScreenBack

@@ -16,6 +16,19 @@
     SendCommandShell -SerialNumber $SerialNumber -Command "settings put secure sysui_qs_tiles $result"
 }
 
+function DesactivationOptionDeveloppement{param( [String]$SerialNumber)
+    Write-Host "Envoie commande de 'Désactivation Option de developpement'"
+    SendCommandShell -SerialNumber $SerialNumber -Command "am start -n com.android.settings/.Settings$\DevelopmentSettingsActivity" | Out-Null
+    $ScreenForDoubleClick = GetScreen -SerialNumber $SerialNumber
+    $CoordButtonBack = FoundCoordByXPath -SerialNumber $SerialNumber -XPath @(".//*[@resource-id='android:id/action_bar']/*[@index='1']",".//*[@content-desc=`"Remonter d'un niveau`"]") -ScreenBack $ScreenForDoubleClick
+    $CoordButtonDev = FoundCoordByXPath -SerialNumber $SerialNumber -XPath @(".//*[@resource-id='com.android.settings:id/switch_bar']",".//*[@text='Activé']") -ScreenBack $ScreenForDoubleClick
+    [int]$MidXButtonDev = ([int]$CoordButtonDev["Left"]+[int]$CoordButtonDev["Right"])/2
+    [int]$MidYButtonDev = ([int]$CoordButtonDev["Up"]+[int]$CoordButtonDev["Down"])/2
+    [int]$MidXButtonBack = ([int]$CoordButtonBack["Left"]+[int]$CoordButtonBack["Right"])/2
+    [int]$MidYButtonBack = ([int]$CoordButtonBack["Up"]+[int]$CoordButtonBack["Down"])/2
+    SendCommandShell -SerialNumber $SerialNumber -Command "input tap $MidXButtonDev $MidYButtonDev & sleep 2 & input tap $MidXButtonBack $MidYButtonBack"
+
+}
 
 function DesactiverRotationAuto{param( [String]$SerialNumber)
     Write-Host "Envoie commande de 'Désactivation de la rotation auto'"

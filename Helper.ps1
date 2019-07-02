@@ -33,9 +33,8 @@ function FoundCoordByXPath{param( [String]$SerialNumber, $XPath, [xml]$ScreenBac
         {
             return $matches
         }
-        else {
-            return $false
-        }
+        return $false
+        
     }
 }
 function FoundNodeByXPath{param( [String]$SerialNumber, $XPath, [xml]$ScreenBack = "")   

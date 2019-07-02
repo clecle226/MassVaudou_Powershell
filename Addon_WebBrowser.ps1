@@ -78,7 +78,8 @@ function DefinirHomepageChrome{param( [String]$SerialNumber, [String]$Adresse = 
 #Mozilla Firefox
 function DefinirHomepageFirefox{
     param( [String]$SerialNumber, [String]$Adresse = "google.com")
-    SendCommandShell -SerialNumber $SerialNumber -Command "am start -n org.mozilla.firefox/org.mozilla.gecko.BrowserApp -d $Adresse" | Out-Null
+    SendCommandShell -SerialNumber $SerialNumber -Command "am start -n org.mozilla.firefox/org.mozilla.gecko.BrowserApp " | Out-Null
+    # -d $Adresse
     Start-Sleep -Seconds 2 #Error on loading page 
     #TODO: Search secure test
     ClickOnNodeByXPath -SerialNumber $SerialNumber -XPath ".//*[@resource-id='org.mozilla.firefox:id/menu']" | Out-Null

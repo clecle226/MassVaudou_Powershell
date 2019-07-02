@@ -70,6 +70,13 @@ function InstallationByPlayStore {
         {
             Start-Sleep -Seconds 2
         }
+        if((FoundNodeByXPath -SerialNumber $SerialNumber -XPath ".//*[@text='Mettez à jour votre compte pour continuer à installer des applications sur Google Play.']").length -ne 0 )
+        {
+            #Correction de la PUTAIN DE PROCEDURE non A4W
+            ClickOnNodeByXPath -SerialNumber $SerialNumber -XPath @(".//*[@text='CONTINUER']", ".//*[@resource-id='com.android.vending:id/footer1']")
+            ClickOnNodeByXPath -SerialNumber $SerialNumber -XPath @(".//*[@text='PASSER']", ".//*[@resource-id='com.android.vending:id/secondary_button']")
+        }
+        
 
         if($ResultPackage)
         {
