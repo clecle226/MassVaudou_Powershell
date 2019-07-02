@@ -9,10 +9,13 @@ $ListProject = $ListProject.Name.Split([Environment]::NewLine)
 If ($ListProject -notcontains "platform-tools")
 {  
     "Téléchargement de platform-tools (SDK Android)"
+    #TODO: Correct error extract
     Invoke-WebRequest -Uri "https://dl.google.com/android/repository/platform-tools-latest-windows.zip" -OutFile ".\adb.zip"
-    [System.IO.Compression.ZipFile]::ExtractToDirectory( ".\adb.zip", ".\" )
+
+    #[System.IO.Compression.ZipFile]::ExtractToDirectory(".\adb.zip", ".\" )
+
     Remove-Item –path ".\adb.zip"
-    Clear-Host
+    #Clear-Host
 }
 
 $ListProject =  $ListProject | Where-Object { ($_-ne "platform-tools") -and ( $_-ne "logs") }
@@ -65,7 +68,7 @@ function ListDeviceWaitUnauthorized{
 }
 $ListTerminaux = ListDeviceWaitUnauthorized
 $ListTerminaux =$ListTerminaux.where({ -not [string]::IsNullOrWhitespace($_) })
-Write-Host "Voici la liste des terminaux detecté" -ForegroundColor Green
+Write-Host "Voici la liste des "$ListTerminaux.Count" terminaux detectés" -ForegroundColor Green
 $ListTerminaux
 Write-Host "Lancement du Script $Project" -ForegroundColor Green
 Write-Host "Attente confirmation utilisateur" -ForegroundColor Magenta

@@ -1,7 +1,7 @@
 ﻿function SelectDefaultNavigator{
     param( [String]$SerialNumber, [String]$Name = "Chrome")
     SendCommandShell -SerialNumber $SerialNumber -Command "am start -n com.android.settings/.Settings$\ManageApplicationsActivity"
-    ClickOnNodeByXPath -SerialNumber $SerialNumber -XPath @(".//*[@class='android.widget.Button']",".//*[@content-desc='Options supplémentaires']") | Out-Null
+    ClickOnNodeByXPath -SerialNumber $SerialNumber -XPath @(".//*[@content-desc='Options supplémentaires']",".//*[@class='android.widget.Button']") | Out-Null
     ClickOnNodeByXPath -SerialNumber $SerialNumber -XPath @(".//*[@text='Applications par défaut']/../..",".//*[@class='android.widget.ListView']//*[index='1']") | Out-Null
     ClickOnNodeByXPath -SerialNumber $SerialNumber -XPath @(".//*[@text='Application de navigation']/../..",".//*[@class='android:id/list']//*[index='0']") | Out-Null
     ClickOnNodeByXPath -SerialNumber $SerialNumber -XPath @(".//*[@text='$Name']/../..") | Out-Null
@@ -58,19 +58,25 @@ function CreateWebsiteShortcutChrome {
 }
 
 function DefinirHomepageChrome{param( [String]$SerialNumber, [String]$Adresse = "google.com")
-    SendCommandShell -SerialNumber $SerialNumber -Command "am start -n com.android.chrome/com.google.android.apps.chrome.Main -d $Adresse"
+    SendCommandShell -SerialNumber $SerialNumber -Command "am start -n com.android.chrome/com.google.android.apps.chrome.Main -d $Adresse" | Out-Null
 
-    ClickOnNodeByXPath -SerialNumber $SerialNumber -XPath ".//*[@resource-id='com.android.chrome:id/menu_button']"
+    ClickOnNodeByXPath -SerialNumber $SerialNumber -XPath ".//*[@resource-id='com.android.chrome:id/menu_button']" | Out-Null
     ##Entrer dans parametres
-    ClickOnNodeByXPath -SerialNumber $SerialNumber -XPath @(".//*[@resource-id='com.android.chrome:id/app_menu_list']//*[@text='Paramètres']/..",".//*[@resource-id='com.android.chrome:id/app_menu_list']/*[@index='10']")
+    ClickOnNodeByXPath -SerialNumber $SerialNumber -XPath @(".//*[@resource-id='com.android.chrome:id/app_menu_list']//*[@text='Paramètres']/..",".//*[@resource-id='com.android.chrome:id/app_menu_list']/*[@index='10']")  | Out-Null
     ##Page D'accueil
-    ClickOnNodeByXPath -SerialNumber $SerialNumber -XPath @(".//*[@resource-id='android:id/list']//*[@text=`"Page d'accueil`"]",".//*[@resource-id='android:id/list']/*[@index='6']")
-    ClickOnNodeByXPath -SerialNumber $SerialNumber -XPath @(".//*[@resource-id='android:id/list']//*[@text='Ouvrir cette page']",".//*[@resource-id='android:id/list']/*[@index='1']")
+    ClickOnNodeByXPath -SerialNumber $SerialNumber -XPath @(".//*[@resource-id='android:id/list']//*[@text=`"Page d'accueil`"]",".//*[@resource-id='android:id/list']/*[@index='6']") | Out-Null
+    ClickOnNodeByXPath -SerialNumber $SerialNumber -XPath @(".//*[@resource-id='android:id/list']//*[@text='Ouvrir cette page']",".//*[@resource-id='android:id/list']/*[@index='1']") | Out-Null
 
-    ClearTextEdit -SerialNumber $SerialNumber -IdTextEdit "com.android.chrome:id/homepage_url_edit"
-    SendCommandShell -SerialNumber $SerialNumber -Command "input text '$Adresse'"
+    ClearTextEdit -SerialNumber $SerialNumber -IdTextEdit "com.android.chrome:id/homepage_url_edit" | Out-Null
+    SendCommandShell -SerialNumber $SerialNumber -Command "input text '$Adresse'" | Out-Null
 
-    ClickOnNodeByXPath -SerialNumber $SerialNumber -XPath ".//*[@resource-id='com.android.chrome:id/homepage_save']"
+    if(ClickOnNodeByXPath -SerialNumber $SerialNumber -XPath ".//*[@resource-id='com.android.chrome:id/homepage_save']")
+    {
+        Write-Host "Page d'accueil de chrome changé pour: $Adresse" -ForegroundColor Green
+    }
+    else {
+        Write-Host  "Erreur lors du changement de la page d'accueil de chrome: $Adresse"-ForegroundColor Red
+    }
     SendCommandShell -SerialNumber $SerialNumber -Command "am force-stop com.android.chrome"
 
 }

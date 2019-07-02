@@ -3,7 +3,7 @@
    }
 function ADBGetProperty{
     param( [String]$SerialNumber, [String]$Property)
-    return .\platform-tools\adb.exe -s $SerialNumber shell getprop $Property
+    return SendCommandShell -SerialNumber $SerialNumber -Command "getprop $Property"
 }
 function GetIMEI{param( [String]$SerialNumber)
     $rawResult = SendCommandShell -SerialNumber $SerialNumber -Command "service call iphonesubinfo 1"
@@ -13,11 +13,57 @@ function GetIMEI{param( [String]$SerialNumber)
     $tradParcell = $tradParcell.Replace("'","")
     return $tradParcell
 }
+
+function CallADB{param( [String]$SerialNumber, [String]$Command)
+    $p = New-Object System.Diagnostics.Process
+    $p.StartInfo.FileName = (Convert-Path -Path ".")+"\platform-tools\adb.exe"
+    #$p.StartInfo.WorkingDirectory = Convert-Path -Path "."
+    $p.StartInfo.RedirectStandardOutput = $true
+    $p.StartInfo.RedirectStandardError = $true
+    $p.StartInfo.UseShellExecute = $false
+    $p.StartInfo.Arguments = "-s $SerialNumber $Command"
+    $p.StartInfo.WorkingDirectory = (Convert-Path -Path ".")
+
+    $p.Start() | Out-Null
+
+    $stdout = $p.StandardOutput.ReadToEnd()
+    $stderr = $p.StandardError.ReadToEnd()
+    while($stderr -match "error: device '.*' not found")
+    {
+        Write-Host "Attente de reconnexion de l'appareil. Merci!!!!"
+        Start-Sleep -Seconds 3
+        $p.Start() | Out-Null
+
+        $stdout = $p.StandardOutput.ReadToEnd()
+        $stderr = $p.StandardError.ReadToEnd()
+    }
+    If(-not ([string]::IsNullOrWhiteSpace($stderr)))
+    {
+        Write-Host "Erreur du logiciel ADB: $stderr" -ForegroundColor DarkGray
+        return "Error: $stderr `r`nSTDOUT: $stdout"
+    }
+    return $stdout
+}
+
+#function WaitReconnectDevice{param( [String]$SerialNumber)
+#    $TestConnexion = .\platform-tools\adb.exe -s $SerialNumber shell ls 2>&1
+#    while ($TestConnexion -match "error: device '.*' not found") {
+#        Start-Sleep -Seconds 2
+#        Write-Host "Attente de reconnexion de l'appareil. Merci!!!!"
+#        $TestConnexion = .\platform-tools\adb.exe -s $SerialNumber shell  ls 2>&1
+#    }
+#    Start-Sleep -Seconds 4
+#    $TestConnexion = .\platform-tools\adb.exe -s $SerialNumber shell ls /dev/tty 2>&1
+#    if($TestConnexion -match "error: device '.*' not found")
+#    {
+#        WaitReconnectDevice -SerialNumber $SerialNumber
+#    }
+#
+#}
 function GetScreen{param( [String]$SerialNumber)
     do{
         [System.Console]::OutputEncoding = [System.Text.Encoding]::UTF8
-        $resultScreen = .\platform-tools\adb.exe -s $SerialNumber exec-out uiautomator dump /dev/tty
-    
+        $resultScreen = CallADB -SerialNumber $SerialNumber -Command "exec-out uiautomator dump /dev/tty"
         $resultScreen -match '<.*>' | Out-Null
     }while ($matches.Length -eq 0)
     [xml]$result = $matches[0]
@@ -149,32 +195,13 @@ else {
 }
 function SendCommandShell{
     param( [String]$SerialNumber, [String]$Command)
-
-    $p = New-Object System.Diagnostics.Process
-    $p.StartInfo.FileName = (Convert-Path -Path ".")+"\platform-tools\adb.exe"
-    #$p.StartInfo.WorkingDirectory = Convert-Path -Path "."
-    $p.StartInfo.RedirectStandardOutput = $true
-    $p.StartInfo.RedirectStandardError = $true
-    $p.StartInfo.UseShellExecute = $false
-    $p.StartInfo.Arguments = "-s $SerialNumber shell $Command"
-
-    $p.Start() | Out-Null
-
-    $stdout = $p.StandardOutput.ReadToEnd()
-    $stderr = $p.StandardError.ReadToEnd()
-    If(-not ([string]::IsNullOrWhiteSpace($stderr)))
-    {
-        Write-Host "Erreur du logiciel ADB: $stderr" -ForegroundColor DarkGray
-        return "Error: $stderr `r`nSTDOUT: $stdout"
-    }
-    return $stdout
+    return CallADB -SerialNumber $SerialNumber -Command "shell $Command"
 }
 
 
 function ClearTextEdit {
     param( [String]$SerialNumber, [String]$IdTextEdit)
-    (.\platform-tools\adb.exe -s $SerialNumber exec-out uiautomator dump /dev/tty) -match '<.*>' | Out-Null
-    [xml]$result = $matches[0]
+    GetScreen -SerialNumber $SerialNumber
     
     $NbrChar = ((Select-Xml -Xml $result -XPath ".//*[@resource-id='$IdTextEdit']")[0]).Node.text.Length
     $repeatInput = ""
@@ -191,18 +218,20 @@ function ClearTextEdit {
 function PushFile{ param( [String]$SerialNumber, [String]$PathSource,  [String]$PathDestination, [bool]$Sync = $False)
     If($Sync)
     {
-        .\platform-tools\adb.exe -s $SerialNumber --sync push $PathSource $PathDestination
+        CallADB -SerialNumber $SerialNumber -Command "--sync push $PathSource $PathDestination"
     }
     else {
-        .\platform-tools\adb.exe -s $SerialNumber push $PathSource $PathDestination
+        CallADB -SerialNumber $SerialNumber -Command "push $PathSource $PathDestination"
     }
 }
 
 
-
-. .\Addon_OptionBuiltin.ps1
-. .\Addon_OptionNotBuiltin.ps1
-. .\Addon_Package.ps1
-. .\Addon_WebBrowser.ps1
-. .\Addon_SamsungExperience.ps1
+#Include All Addon_ ...
+$ListAddon = Get-ChildItem -Path ".\" | Select-Object
+$ListAddon = $ListAddon.Name.Split([Environment]::NewLine)
+$ListAddon =  $ListAddon | Where-Object { ($_ -match "Addon") }
+foreach ($item in $ListAddon)
+{
+    . .\$item
+}
 

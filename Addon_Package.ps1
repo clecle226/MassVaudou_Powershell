@@ -12,13 +12,13 @@ function InstallApk {
     if($Granted)
     {  
         Write-Host "Installation de $NameApp avec Granted"
-        $result = .\platform-tools\adb.exe -s $SerialNumber install -g -r $PathApk
+        $result = CallADB -SerialNumber $SerialNumber -Command "install -g -r $PathApk"
     }
     else {
         Write-Host "Installation de $NameApp"
-        $result = .\platform-tools\adb.exe -s $SerialNumber install -r $PathApk
+        $result = CallADB -SerialNumber $SerialNumber -Command "install -r $PathApk"
     }
-    if($result -contains "Success")
+    if($result -match "Success")
     {
         Write-Host "Installation de $NameApp éffectué avec succés" -ForegroundColor Green
     }
@@ -41,7 +41,21 @@ function UninstallPackages {
         $i +=1
     }
 	#$Msg += "'"
-    SendCommandShell -SerialNumber $SerialNumber -Command $Msg
+     SendCommandShell -SerialNumber $SerialNumber -Command $Msg
+    <#$ListResult = $Result.Split([Environment]::NewLine)
+    $i = 0
+    foreach ($package in $ListPackagesName)
+    {
+        if($ListResult[$i] -match "SUCCESS")
+        {
+            Write-Host "Le package $package a bien été désinstallé." -ForegroundColor Green
+        }
+        else {
+            Write-Host "ERROR: Le package $package n'a pas été désisntallé. Msg: " -ForegroundColor Red
+            Write-Host $ListResult[$i]
+        }
+        $i +=1
+    }#>
 }
 function DisabledPackages {
     param( [String]$SerialNumber, [Object]$ListPackagesName)
